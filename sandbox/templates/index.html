@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nature Language Sandbox</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .editor-container, .results-container {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+        .editor-header, .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .editor-header h2, .results-header h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        .editor-body {
+            flex-grow: 1;
+            width: 100%;
+            display: flex;
+        }
+        #nature-code {
+            flex-grow: 1;
+            width: 100%;
+            height: 100%;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: none;
+            box-sizing: border-box;
+            font-size: 14px;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+        .run-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .run-btn:hover {
+            background-color: #45a049;
+        }
+        .results-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        .tab {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 4px 4px 0 0;
+            background-color: #f9f9f9;
+        }
+        .tab.active {
+            border-bottom: none;
+            background-color: white;
+            font-weight: bold;
+        }
+        .result-content {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: auto;
+            display: none;
+        }
+        .result-content.active {
+            display: block;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Nature Language Sandbox</h1>
+    
+    <div class="container">
+        <div class="editor-container">
+            <div class="editor-header">
+                <h2>Nature Code</h2>
+                <button id="run-btn" class="run-btn">Run Code</button>
+            </div>
+            <div class="editor-body">
+                <textarea id="nature-code" placeholder="Enter your Nature code here...
+Example:
+
+function:
+    create an array of numbers from 1 to 10
+    calculate the sum of these numbers
+    print the result"></textarea>
+            </div>
+        </div>
+        
+        <div class="results-container">
+            <div class="results-header">
+                <h2>Results</h2>
+            </div>
+            <div class="results-tabs">
+                <div class="tab active" data-tab="output">Output</div>
+                <div class="tab" data-tab="code">Generated Python</div>
+                <div class="tab" data-tab="error">Errors</div>
+            </div>
+            <div id="output" class="result-content active"></div>
+            <div id="code" class="result-content"></div>
+            <div id="error" class="result-content"></div>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">
+        Compiling and running your code...
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const runBtn = document.getElementById('run-btn');
+            const natureCode = document.getElementById('nature-code');
+            const outputElement = document.getElementById('output');
+            const codeElement = document.getElementById('code');
+            const errorElement = document.getElementById('error');
+            const loadingElement = document.getElementById('loading');
+            const tabs = document.querySelectorAll('.tab');
+            
+            // Enable tab key in textarea
+            natureCode.addEventListener('keydown', function(e) {
+                // Handle tab key
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    
+                    // Get cursor position
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    
+                    // Insert tab at cursor position
+                    this.value = this.value.substring(0, start) + '    ' + this.value.substring(end);
+                    
+                    // Move cursor after tab
+                    this.selectionStart = this.selectionEnd = start + 4;
+                }
+                
+                // Handle enter key for Python-like indentation
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    
+                    // Get cursor position and text
+                    const start = this.selectionStart;
+                    const text = this.value;
+                    
+                    // Get the current line before the cursor
+                    const textBeforeCursor = text.substring(0, start);
+                    const lines = textBeforeCursor.split('\n');
+                    const currentLine = lines[lines.length - 1];
+                    
+                    // Determine indentation for the new line
+                    let indentation = '';
+                    
+                    // Get current indentation
+                    const currentIndentMatch = currentLine.match(/^(\s*)/);
+                    if (currentIndentMatch) {
+                        indentation = currentIndentMatch[1];
+                    }
+                    
+                    // Add extra indentation if the line ends with function:
+                    const trimmedLine = currentLine.trim().toLowerCase();
+                    if (trimmedLine === 'function:' || trimmedLine.endsWith('function:')) {
+                        indentation += '    '; // Add one level of indentation
+                    }
+                    
+                    // Insert newline with proper indentation
+                    this.value = text.substring(0, start) + '\n' + indentation + text.substring(start);
+                    
+                    // Move cursor after the indentation
+                    this.selectionStart = this.selectionEnd = start + 1 + indentation.length;
+                }
+            });
+            
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    tabs.forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.result-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked tab and corresponding content
+                    this.classList.add('active');
+                    const tabName = this.getAttribute('data-tab');
+                    document.getElementById(tabName).classList.add('active');
+                });
+            });
+            
+            // Run code button
+            runBtn.addEventListener('click', function() {
+                const code = natureCode.value.trim();
+                
+                if (!code) {
+                    errorElement.textContent = 'Please enter some code.';
+                    document.querySelector('[data-tab="error"]').click();
+                    return;
+                }
+                
+                // Show loading
+                loadingElement.style.display = 'block';
+                
+                // Clear previous results
+                outputElement.textContent = '';
+                codeElement.textContent = '';
+                errorElement.textContent = '';
+                
+                // Send code to server
+                fetch('/compile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code: code })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Hide loading
+                    loadingElement.style.display = 'none';
+                    
+                    // Display results
+                    if (data.success) {
+                        outputElement.textContent = data.output || 'No output.';
+                        document.querySelector('[data-tab="output"]').click();
+                    } else {
+                        errorElement.textContent = data.error || 'Unknown error.';
+                        document.querySelector('[data-tab="error"]').click();
+                    }
+                    
+                    // Always display the generated code
+                    codeElement.textContent = data.generated_code || 'No code generated.';
+                })
+                .catch(error => {
+                    // Hide loading
+                    loadingElement.style.display = 'none';
+                    
+                    // Display error
+                    errorElement.textContent = 'Network error: ' + error.message;
+                    document.querySelector('[data-tab="error"]').click();
+                });
+            });
+        });
+    </script>
+</body>
+</html> 
