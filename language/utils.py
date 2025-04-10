@@ -1,5 +1,5 @@
 # language/utils.py
-from language.ast import FunctionDefinition
+from .ast import FunctionDefinition
 
 def load_nature_file(file_path):
     """Reads a .nature file and returns its content."""
@@ -28,7 +28,11 @@ def parse_nature_document(document_text):
         if line_strip.lower().startswith("function:"):
             if current_function_lines and current_function_name:
                 instructions = "\n".join(current_function_lines).strip()
-                functions.append(FunctionDefinition(instructions, current_function_name))
+                functions.append(FunctionDefinition(
+                    name=current_function_name,
+                    instructions=instructions,
+                    generated_code=None  # Will be set later
+                ))
             func_counter += 1
             current_function_name = f"function_{func_counter}"
             # Optionally capture extra text after "function:".
@@ -37,7 +41,14 @@ def parse_nature_document(document_text):
         else:
             if line_strip:
                 current_function_lines.append(line_strip)
+    
+    # Handle the last function
     if current_function_lines and current_function_name:
         instructions = "\n".join(current_function_lines).strip()
-        functions.append(FunctionDefinition(instructions, current_function_name))
+        functions.append(FunctionDefinition(
+            name=current_function_name,
+            instructions=instructions,
+            generated_code=None  # Will be set later
+        ))
+    
     return functions

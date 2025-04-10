@@ -5,6 +5,14 @@ from language.code_generator import generate_document_code
 from language.debugger import run_generated_code
 from language.parser import llm_generate_function_code
 from language.ast import FunctionDefinition
+from language.importer import load_module
+
+
+def load_global_imports(import_list):
+    global_env = {}
+    for module_name in import_list:
+        global_env[module_name] = load_module(module_name)
+    return global_env
 
 def main():
     # Load instructions from a file if provided; otherwise, use REPL mode.
@@ -29,6 +37,7 @@ def main():
     
     print("\n--- Loaded Document ---")
     print(document_text)
+
 
     # Parse the document into function definitions.
     functions = parse_nature_document(document_text)
