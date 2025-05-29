@@ -1,0 +1,4 @@
+function:
+    return 100 * 5 + 20 / 2
+function:
+    return (300 + 5) * 2 

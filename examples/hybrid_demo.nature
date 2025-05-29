@@ -1,0 +1,16 @@
+function:
+    create a SQL table called "Books" with an id, title, and price
+    add a book called "1987" for $4.44
+    add a book called "Learning Geology" for $30
+    add a book called "Hybrid Systems" for $25.99
+    return this table
+
+function:
+    print the table in function before this one
+    calculate the average price of all books
+    return a message with the average price
+
+function:
+    create a bar chart visualization of the book prices
+    save it as "book_prices.png"
+    return the path to the saved image 

@@ -1,134 +1,100 @@
-# Nature
+# Nature Language
 
-A natural language based coding language.
+Nature is a natural language programming interface that allows you to write programs in plain English.
 
-## About Nature
+## Key Features
 
-Nature is a proof of concept for a natural language programming language that:
+- Write programs in plain English
+- Automatic translation to executable code
+- Simple syntax with function-based structure
+- Support for SQL operations, data manipulation, arithmetic operations
+- String manipulation and array operations
+- Natural language math expressions
 
-- Accepts blocks of natural language instructions (e.g., functions starting with "function:" followed by verb-led commands)
-- Uses OpenAI's API to understand and convert natural language to valid Python code
-- Generates runnable Python code from natural language instructions
-- Provides a REPL and file-based workflow (with .nature extension)
-- Catches runtime errors and guides users with AI-powered suggestions
+## Getting Started
 
-## Installation
+### Prerequisites
 
-### Using Conda (Recommended)
+- Python 3.7+
 
-1. Clone this repository
-2. Run the setup script to create a conda environment with all dependencies:
+### Running an Example
 
-   **On macOS/Linux:**
-   ```
-   chmod +x setup_conda_env.sh
-   ./setup_conda_env.sh
-   ```
+```bash
+# Run the demo example
+./nature examples/demo.nature
 
-   **On Windows:**
-   ```
-   setup_conda_env.bat
-   ```
+# Try arithmetic operations
+./nature examples/calculator.nature
 
-3. Activate the environment:
-   ```
-   conda activate nature-env
-   ```
-
-4. Set your OpenAI API key:
-   
-   **On macOS/Linux:**
-   ```
-   export OPENAI_API_KEY=your_api_key_here
-   ```
-   
-   **On Windows:**
-   ```
-   set OPENAI_API_KEY=your_api_key_here
-   ```
-
-5. Install Rust (if not already installed):
-   ```
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   ```
-
-6. Build the Nature binary:
-   ```
-   cargo build --release
-   ```
-
-7. Install the Nature command:
-   ```
-   ./install.sh
-   ```
-
-### Manual Installation
-
-1. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-
-2. Set your OpenAI API key as above
-
-3. Install Rust and build the binary as described above
-
-## Usage
-
-### Running a Nature File
-
-The simplest way to run a Nature file is using the `nature` command:
-
-```
-nature examples/demo.nature
+# Try array and string operations
+./nature examples/custom.nature
+./nature examples/strings.nature
+./nature examples/math.nature
 ```
 
-### Web Sandbox
+## Example Programs
 
-The sandbox provides a web interface to test Nature code:
-
-```
-cd sandbox
-python app.py
-```
-
-Then open your browser to http://localhost:5000
-
-### Command Line REPL
+### SQL Operations
 
 ```
-python -m language.repl
-```
-
-## Examples
-
-You can find example Nature code in the `examples/` directory. Here's a simple example:
-
-```nature
 function:
     create a SQL table called "Books" with an id, title, and price
     add a book called "1987" for $4.44
-    add a book called "Learning Geology" for $30
+    add a book called "Learning Geology" for $24
     return this table
 function:
-    print the table from function_1
+    print the table in function before this one
 ```
 
-## Development
+### Arithmetic Operations
 
-### Building from Source
+```
+function:
+    return 100 * 5 + 20 / 2
+function:
+    return (300 + 5) * 2
+```
 
-1. Make sure you have Rust installed
-2. Clone the repository
-3. Build the release version:
-   ```
-   cargo build --release
-   ```
-4. The binary will be available at `target/release/nature`
+### Natural Language Math
 
-### Project Structure
+```
+function:
+    calculate the square root of 16
+function:
+    calculate 5 times 8 plus 2 divided by 2
+```
 
-- `language/`: Python implementation for parsing and code generation
-- `src/`: Rust implementation for the runtime environment
-- `examples/`: Example Nature files
-- `sandbox/`: Web interface for testing
+### Array Operations
+
+```
+function:
+    print an array of 10-19
+function:
+    count from 1 to 5
+```
+
+### String Operations
+
+```
+function:
+    reverse the string hello
+function:
+    uppercase the string nature language
+```
+
+## How It Works
+
+Nature translates natural language into executable operations using pattern matching and rule-based NLP. 
+
+The process involves:
+1. Parsing the input file into functions
+2. Recognizing the type of operation in each function
+3. Executing the appropriate action based on the detected operation
+
+## Documentation
+
+For more detailed information, see the [USAGE.md](USAGE.md) file.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

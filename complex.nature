@@ -1,0 +1,11 @@
+Function: Generate Fibonacci sequence
+Generate the first 15 numbers in the Fibonacci sequence and print them.
+
+Function: Find palindromes
+Find all palindromes in the list: apple, racecar, banana, level, python, madam, code, civic, programming, radar.
+
+Function: Create temperature converter
+Create a function that converts temperatures from Celsius to Fahrenheit and from Fahrenheit to Celsius.
+Convert 25 degrees Celsius to Fahrenheit.
+Convert 98.6 degrees Fahrenheit to Celsius.
+Print the results. 

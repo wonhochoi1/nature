@@ -1,0 +1,21 @@
+Function: Create a books table
+Create a SQL table called books with title and price.
+Add a book called "Nature Programming" for $29.99
+Add a book called "Python in Action" for $19.99
+Add a book called "The Art of Code" for $24.99
+Return the table
+
+Function: Print the table
+Print the table from the function before this
+
+Function: Array generation
+Print an array of 10-19
+
+Function: String operation
+Reverse the string hello world
+
+Function: Math operation
+Calculate 5 * 10 + 20 / 4
+
+Function: Complex task
+Find the prime numbers between 1 and 30 and return them 

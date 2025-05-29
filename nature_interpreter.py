@@ -125,23 +125,28 @@ def execute_python_code(code, context=None):
     try:
         compile(code, '<string>', 'exec')
     except SyntaxError as e:
+        print(f"Syntax error in generated code: {e}")
         if parser is not None and hasattr(parser, "llm_debug_suggestion"):
             debug_suggestion = parser.llm_debug_suggestion(
                 "Fix Python syntax error",
                 str(e),
                 code
             )
+            print(f"Debug suggestion: {debug_suggestion}")
             
             # Try to fix common syntax issues
             if hasattr(parser, "sanitize_code"):
+                print("Attempting to fix code...")
                 # Get the current function's instructions
                 instructions = context.get("current_instructions", "Unknown instruction")
                 code = parser.sanitize_code(code, instructions)
+                print("Code fixed, retrying execution.")
                 
                 try:
                     # Try compiling again
                     compile(code, '<string>', 'exec')
-                except SyntaxError:
+                except SyntaxError as e:
+                    print(f"Still has syntax errors after fixing: {e}")
                     return None
         else:
             return None
@@ -152,14 +157,12 @@ def execute_python_code(code, context=None):
         
         # Return the result if available
         if "result" in local_vars:
-            # Print the result for visibility
-            print(f"Output: {local_vars['result']}")
             return local_vars["result"]
         else:
-            # Print a warning that no result was found
-            print("Warning: No 'result' variable found in executed code")
             return None
     except Exception as e:
+        print(f"Error executing code: {e}")
+        
         # Try to get debugging help if parser module is available
         if parser is not None and hasattr(parser, "llm_debug_suggestion"):
             debug_suggestion = parser.llm_debug_suggestion(
@@ -167,6 +170,8 @@ def execute_python_code(code, context=None):
                 str(e),
                 code
             )
+            print(f"Debug suggestion: {debug_suggestion}")
+        
         return None
 
 def execute_function(instructions, context=None):
@@ -175,6 +180,8 @@ def execute_function(instructions, context=None):
         context = {}
     
     function_id = context.get("current_function_id", "function_1")
+    print(f"\nExecuting function: {function_id}")
+    print(f"Instructions: {instructions[:100]}..." if len(instructions) > 100 else f"Instructions: {instructions}")
     
     # Store the current instructions in the context
     context["current_instructions"] = instructions
@@ -185,6 +192,7 @@ def execute_function(instructions, context=None):
     if parser is not None:
         try:
             # First try using IR nodes
+            print("Generating IR nodes from instructions...")
             ir_nodes = parser.llm_generate_ir_nodes(instructions, function_id)
             
             if ir_nodes and "nodes" in ir_nodes:
@@ -193,6 +201,7 @@ def execute_function(instructions, context=None):
                         # Handle different operation types
                         if node["operation_type"] == "PythonCode":
                             code = node["details"]["code"]
+                            print(f"Executing generated code...")
                             result = execute_python_code(code, context)
                             context[node["id"]] = result
                         
@@ -213,6 +222,9 @@ def execute_function(instructions, context=None):
                             # Fetch results if it's a SELECT query
                             if query.strip().upper().startswith("SELECT"):
                                 result = cursor.fetchall()
+                                print(f"SQL query results: {result}")
+                            else:
+                                print(f"SQL query executed: {query}")
                             
                             context["sqlite_conn"].commit()
                             context[node["id"]] = result
@@ -220,11 +232,10 @@ def execute_function(instructions, context=None):
                         elif node["operation_type"] == "Print":
                             value_ref = node["details"].get("value_ref")
                             if value_ref and value_ref in context:
-                                print(f"{context[value_ref]}")
+                                print(f"Print result: {context[value_ref]}")
                                 result = context[value_ref]
                             else:
-                                # If there's no specific value reference, print the entire context
-                                print(f"Context values: {context}")
+                                print("Nothing to print (reference not found)")
                     except Exception as e:
                         print(f"Error executing node: {e}")
                 
@@ -236,6 +247,7 @@ def execute_function(instructions, context=None):
         
         # If IR nodes failed or didn't produce a result, try direct code generation
         try:
+            print("Trying direct code generation...")
             code = parser.llm_generate_function_code(instructions)
             if code:
                 result = execute_python_code(code, context)
@@ -245,6 +257,7 @@ def execute_function(instructions, context=None):
             print(f"Error with direct code generation: {e}")
     
     # If all else fails
+    print(f"All LLM approaches failed. Using simple execution.")
     return f"Completed: {instructions}"
 
 def execute_nature_file(file_path):
@@ -258,10 +271,6 @@ def execute_nature_file(file_path):
         function_id = f"function_{i+1}"
         context["current_function_id"] = function_id
         result = execute_function(instructions, context)
-        
-        # Print the result of the function
-        print(f"Result: {result}")
-        
         results.append(result)
         context[f"{function_id}_result"] = result
     

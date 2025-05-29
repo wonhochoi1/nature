@@ -1,10 +1,21 @@
 use std::env;
-use std::process::{self, Command};
+use std::fs;
+use std::process;
+use anyhow::{anyhow, Result};
+use tracing::{info, warn, error};
 
 mod interpreter;
 mod module_manager;
+mod python_executor;
+mod ir;
+mod graph_executor;
+mod translator;
 
 fn main() {
+    // Initialize tracing for better logging
+    tracing_subscriber::fmt::init();
+    
+    // Parse command line arguments
     let args: Vec<String> = env::args().collect();
     
     if args.len() != 2 {
@@ -21,13 +32,47 @@ fn main() {
     match run_file(file_path) {
         Ok(_) => (),
         Err(e) => {
+            error!("Error: {}", e);
             eprintln!("Error: {}", e);
             process::exit(1);
         }
     }
 }
 
-fn run_file(file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn run_file(file_path: &str) -> Result<()> {
+    // Read the nature file content
+    let content = fs::read_to_string(file_path)
+        .map_err(|e| anyhow!("Failed to read file: {}", e))?;
+    
+    info!("Translating file: {}", file_path);
+    
+    // Create our translator
+    let translator = translator::Translator::new();
+    
+    // Translate the nature code to our IR
+    let graph = translator.translate(&content)?;
+    
+    info!("Generated IR graph with {} nodes", graph.nodes.len());
+    
+    // Create our graph executor
+    let executor = graph_executor::GraphExecutor::new();
+    
+    // Execute the graph
+    info!("Executing IR graph");
+    let result = executor.execute_graph(&graph)?;
+    
+    // Print the final result
+    info!("Execution complete");
+    
+    // Print any final results
+    println!("{}", result.to_string());
+    
+    Ok(())
+}
+
+// Legacy function for backward compatibility
+#[allow(dead_code)]
+fn run_file_legacy(file_path: &str) -> Result<()> {
     // First, use Python to parse and generate code
     let python_script = r#"
 import os
@@ -57,22 +102,17 @@ generated_code = generate_document_code(functions)
 print(generated_code)
 "#;
 
-    // Run Python script to get generated code
-    let output = Command::new("python")
-        .arg("-c")
-        .arg(python_script.replace("{}", file_path))
-        .output()?;
-
-    if !output.status.success() {
-        let error = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("Python error: {}", error).into());
-    }
-
-    let generated_code = String::from_utf8(output.stdout)?;
+    // Use our Python executor
+    let python_executor = python_executor::PythonExecutor::new();
+    let generated_code = python_executor.execute_with_stdout(&python_script.replace("{}", file_path))?;
     
     // Now use our Rust interpreter to execute the code
     let mut interpreter = interpreter::Interpreter::new();
-    interpreter.execute(&generated_code)?;
+    
+    // Convert any errors from the interpreter to anyhow errors to ensure Send + Sync compatibility
+    if let Err(e) = interpreter.execute(&generated_code) {
+        return Err(anyhow!("Interpreter error: {}", e));
+    }
     
     Ok(())
 }
