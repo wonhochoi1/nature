@@ -1,0 +1,6 @@
+function:
+    create a SQL table called "Books" with an id, title, and price add a book called "1987" for $4.44
+    add a book called "Learning Geology" for $30
+    return this table
+function:
+    print the table in function before this one
